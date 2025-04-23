@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sugar City POS</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Sugar City POS</h1>
+
+    <form id="sale-form">
+      <label for="date">Date:</label>
+      <input type="date" id="date" required />
+
+      <label for="item">Item:</label>
+      <select id="item" required>
+        <option value="Raisin Roll">Raisin Roll</option>
+        <option value="Coconut Roll">Coconut Roll</option>
+      </select>
+
+      <label for="qty">Quantity:</label>
+      <input type="number" id="qty" min="1" value="1" required />
+
+      <label for="payment">Payment Method:</label>
+      <select id="payment" required>
+        <option value="Cash">Cash</option>
+        <option value="Venmo">Venmo</option>
+        <option value="PayPal">PayPal</option>
+        <option value="Zelle">Zelle</option>
+      </select>
+
+      <label for="buyer">Buyer Name (optional):</label>
+      <input type="text" id="buyer" />
+
+      <button type="submit">Add Sale</button>
+    </form>
+
+    <h2>Sales Log</h2>
+    <table id="sales-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Item</th>
+          <th>Qty</th>
+          <th>Payment</th>
+          <th>Buyer</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <button id="download-csv">Download CSV</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
