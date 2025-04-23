@@ -35,13 +35,25 @@
       <label for="qty">Quantity:</label>
       <input type="number" id="qty" min="1" value="1" required />
 
+             <label for="price">Price:</label>
+      <select id="item" required>
+        <option value="$1">$1</option>
+        <option value="$5">$5</option>
+        <option value="C$45">$45</option>
+        <option value="$55">55</option> 
+        
+        
+      </select>
+      
       <label for="payment">Payment Method:</label>
       <select id="payment" required>
         <option value="Cash">Cash</option>
         <option value="Venmo">Venmo</option>
         <option value="PayPal">PayPal</option>
         <option value="Zelle">Zelle</option>
+    
       </select>
+
 
       <label for="buyer">Buyer Name (optional):</label>
       <input type="text" id="buyer" />
