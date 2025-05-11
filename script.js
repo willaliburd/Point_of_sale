@@ -1,72 +1,80 @@
-document.addEventListener("DOMContentLoaded", function () {
-  const saleForm = document.getElementById("sale-form");
-  const itemInput = document.getElementById("item");
-  const quantityInput = document.getElementById("qty"); // updated
-  const priceInput = document.getElementById("price");
-  const paymentMethodInput = document.getElementById("payment"); // updated
-  const buyerInput = document.getElementById("buyer"); // new
-  const salesTable = document.getElementById("sales-table");
-  const downloadBtn = document.getElementById("download-csv"); // updated
+const form = document.getElementById('sale-form');
+const tableBody = document.querySelector('#sales-table tbody');
+const downloadBtn = document.getElementById('download-csv');
+let salesData = [];
 
-  let salesData = JSON.parse(localStorage.getItem("salesData")) || [];
+// Load data from localStorage when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+  loadFromLocalStorage();
+  renderTable();
+});
 
-  function addSaleToTable(sale) {
-    const row = salesTable.insertRow(-1);
-    row.insertCell(0).innerText = sale.date;
-    row.insertCell(1).innerText = sale.item;
-    row.insertCell(2).innerText = sale.qty;
-    row.insertCell(3).innerText = sale.payment;
-    row.insertCell(4).innerText = sale.buyer || ""; // new
+// Load sales data from localStorage
+function loadFromLocalStorage() {
+  const storedData = localStorage.getItem('sugarcitySalesData');
+  if (storedData) {
+    salesData = JSON.parse(storedData);
   }
+}
 
-  function saveSalesData() {
-    localStorage.setItem("salesData", JSON.stringify(salesData));
-  }
+// Save sales data to localStorage
+function saveToLocalStorage() {
+  localStorage.setItem('sugarcitySalesData', JSON.stringify(salesData));
+}
 
-  function updateTable() {
-    // Clear existing rows
-    while (salesTable.rows.length > 1) {
-      salesTable.deleteRow(1);
-    }
+// Handle form submissions
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
 
-    salesData.forEach(addSaleToTable);
-  }
+  const date = document.getElementById('date').value;
+  const item = document.getElementById('item').value;
+  const qty = parseInt(document.getElementById('qty').value);
+  const payment = document.getElementById('payment').value;
+  const buyer = document.getElementById('buyer').value;
 
-  saleForm.addEventListener("submit", function (e) {
-    e.preventDefault();
+  const sale = { date, item, qty, payment, buyer };
+  salesData.push(sale);
+  
+  // Save to localStorage after adding new sale
+  saveToLocalStorage();
+  
+  addToTable(sale);
+  form.reset();
+});
 
-    const item = itemInput.value.trim();
-    const qty = parseInt(qtyInput.value);
-    const price = parseFloat(priceInput.value);
-    const payment = paymentInput.value;
-    const buyer = buyerInput.value.trim(); // new
-    const total = qty * price;
-    const date = new Date().toLocaleString();
+// Add a single sale to the table
+function addToTable(sale) {
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td>${sale.date}</td>
+    <td>${sale.item}</td>
+    <td>${sale.qty}</td>
+    <td>${sale.payment}</td>
+    <td>${sale.buyer}</td>
+  `;
+  tableBody.appendChild(row);
+}
 
-    const sale = { date, item, quantity, price, total, paymentMethod, buyer }; // new
-    salesData.push(sale);
-    saveSalesData();
-    updateTable();
+// Render the entire table from salesData
+function renderTable() {
+  tableBody.innerHTML = ''; // Clear the table first
+  salesData.forEach(sale => {
+    addToTable(sale);
+  });
+}
 
-    saleForm.reset();
+// Handle CSV download
+downloadBtn.addEventListener('click', () => {
+  let csv = 'Date,Item,Quantity,Payment Method,Buyer\n';
+  salesData.forEach(({ date, item, qty, payment, buyer }) => {
+    csv += `"${date}","${item}",${qty},"${payment}","${buyer}"\n`;
   });
 
-  downloadBtn.addEventListener("click", function () {
-    let csv = "Date,Item,Quantity,Price,Total,Payment Method,Buyer\n"; // updated header
-    salesData.forEach(sale => {
-      csv += `${sale.date},${sale.item},${sale.qty},${sale.price.toFixed(2)},${sale.total.toFixed(2)},${sale.payment},"${sale.buyer || ""}"\n`;
-    });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
 
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "sales.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-
-  // Load existing data on page load
-  updateTable();
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'sugarcity_sales.csv');
+  link.click();
 });
