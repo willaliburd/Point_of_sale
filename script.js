@@ -1,73 +1,87 @@
-
 document.addEventListener("DOMContentLoaded", function () {
-    const form = document.getElementById("order-form");
-    const tableBody = document.getElementById("order-table").getElementsByTagName("tbody")[0];
-    const downloadButton = document.getElementById("download-btn");
+  const form = document.getElementById("pos-form");
+  const tableBody = document.getElementById("sales-table-body");
+  const downloadBtn = document.getElementById("download-csv");
 
-    let orderData = JSON.parse(localStorage.getItem("orderData")) || [];
+  // Load previous sales from localStorage
+  let salesData = JSON.parse(localStorage.getItem("salesData")) || [];
 
-    function updateTable() {
-        tableBody.innerHTML = "";
-        orderData.forEach((item, index) => {
-            const row = tableBody.insertRow();
-            Object.values(item).forEach(value => {
-                const cell = row.insertCell();
-                cell.textContent = value;
-            });
-        });
-    }
+  function saveSales() {
+    localStorage.setItem("salesData", JSON.stringify(salesData));
+  }
 
-    function saveToLocalStorage() {
-        localStorage.setItem("orderData", JSON.stringify(orderData));
-    }
+  function updateTable() {
+    tableBody.innerHTML = "";
+    salesData.forEach((sale, index) => {
+      const row = document.createElement("tr");
+      Object.values(sale).forEach((val) => {
+        const td = document.createElement("td");
+        td.textContent = val;
+        row.appendChild(td);
+      });
+      tableBody.appendChild(row);
+    });
+  }
 
-    form.addEventListener("submit", function (event) {
-        event.preventDefault();
+  function generateCSV() {
+    if (salesData.length === 0) return "";
 
-        const item = document.getElementById("item").value;
-        const quantity = parseInt(document.getElementById("quantity").value);
-        const paymentMethod = document.getElementById("payment").value;
+    const headers = Object.keys(salesData[0]);
+    const csvRows = [headers.join(",")];
 
-        const now = new Date();
-        const timestamp = now.toLocaleString();
-
-        const priceMap = {
-            "Slice of Cake": 4.50,
-            "Cupcake": 3.00,
-            "Coconut Roll": 3.00,
-            "Raisin Roll": 3.00
-        };
-
-        const total = (priceMap[item] * quantity).toFixed(2);
-
-        const newRow = {
-            Timestamp: timestamp,
-            Item: item,
-            Quantity: quantity,
-            Payment: paymentMethod,
-            Total: `$${total}`
-        };
-
-        orderData.push(newRow);
-        saveToLocalStorage();
-        updateTable();
-        form.reset();
+    salesData.forEach((sale) => {
+      const row = headers.map((header) =>
+        `"${(sale[header] || "").toString().replace(/"/g, '""')}"`
+      );
+      csvRows.push(row.join(","));
     });
 
-    downloadButton.addEventListener("click", function () {
-        const csvContent = "data:text/csv;charset=utf-8," + 
-            ["Timestamp,Item,Quantity,Payment,Total"]
-            .concat(orderData.map(e => Object.values(e).join(",")))
-            .join("\n");
+    return csvRows.join("\n");
+  }
 
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "sugarcity_pos_orders.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    });
+  function downloadCSV() {
+    const csv = generateCSV();
+    if (!csv) return;
 
-    updateTable(); // Load existing data on page load
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "sales-log.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const timestamp = new Date().toISOString();
+    const customer = document.getElementById("customer").value.trim();
+    const items = document.getElementById("items").value.trim();
+    const total = document.getElementById("total").value.trim();
+    const payment = document.getElementById("payment").value;
+
+    if (!items || !total || !payment) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
+    const sale = {
+      Date: timestamp,
+      Customer: customer,
+      Items: items,
+      Total: total,
+      Payment: payment,
+    };
+
+    salesData.push(sale);
+    saveSales();
+    updateTable();
+    form.reset();
+  });
+
+  downloadBtn.addEventListener("click", downloadCSV);
+
+  updateTable(); // Initialize table on page load
 });
