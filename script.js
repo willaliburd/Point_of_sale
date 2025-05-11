@@ -1,87 +1,78 @@
-document.addEventListener("DOMContentLoaded", function () {
-  const form = document.getElementById("pos-form");
-  const tableBody = document.getElementById("sales-table-body");
-  const downloadBtn = document.getElementById("download-csv");
+// POS Data
+let sales = JSON.parse(localStorage.getItem("salesData")) || [];
 
-  // Load previous sales from localStorage
-  let salesData = JSON.parse(localStorage.getItem("salesData")) || [];
+// Elements
+const saleForm = document.getElementById("sale-form");
+const salesTableBody = document.getElementById("sales-table-body");
+const downloadBtn = document.getElementById("download-csv");
 
-  function saveSales() {
-    localStorage.setItem("salesData", JSON.stringify(salesData));
+// Initialize: Load existing sales
+sales.forEach(addSaleToTable);
+
+// Form Submit
+saleForm.addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  const item = document.getElementById("item").value.trim();
+  const quantity = parseInt(document.getElementById("quantity").value, 10);
+  const price = parseFloat(document.getElementById("price").value);
+  const paymentMethod = document.getElementById("payment-method").value;
+  const timestamp = new Date().toLocaleString();
+
+  if (!item || isNaN(quantity) || isNaN(price)) {
+    alert("Please fill out all fields correctly.");
+    return;
   }
 
-  function updateTable() {
-    tableBody.innerHTML = "";
-    salesData.forEach((sale, index) => {
-      const row = document.createElement("tr");
-      Object.values(sale).forEach((val) => {
-        const td = document.createElement("td");
-        td.textContent = val;
-        row.appendChild(td);
-      });
-      tableBody.appendChild(row);
-    });
+  const sale = { item, quantity, price, paymentMethod, timestamp };
+  sales.push(sale);
+  localStorage.setItem("salesData", JSON.stringify(sales));
+
+  addSaleToTable(sale);
+  saleForm.reset();
+});
+
+// Add a sale to the table
+function addSaleToTable(sale) {
+  const row = document.createElement("tr");
+
+  row.innerHTML = `
+    <td>${sale.item}</td>
+    <td>${sale.quantity}</td>
+    <td>${sale.price.toFixed(2)}</td>
+    <td>${sale.paymentMethod}</td>
+    <td>${sale.timestamp}</td>
+  `;
+
+  salesTableBody.appendChild(row);
+}
+
+// Download CSV
+downloadBtn.addEventListener("click", function () {
+  if (sales.length === 0) {
+    alert("No sales to export.");
+    return;
   }
 
-  function generateCSV() {
-    if (salesData.length === 0) return "";
+  let csvContent = "data:text/csv;charset=utf-8,";
+  csvContent += "Item,Quantity,Price,Payment Method,Timestamp\n";
 
-    const headers = Object.keys(salesData[0]);
-    const csvRows = [headers.join(",")];
-
-    salesData.forEach((sale) => {
-      const row = headers.map((header) =>
-        `"${(sale[header] || "").toString().replace(/"/g, '""')}"`
-      );
-      csvRows.push(row.join(","));
-    });
-
-    return csvRows.join("\n");
-  }
-
-  function downloadCSV() {
-    const csv = generateCSV();
-    if (!csv) return;
-
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "sales-log.csv";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }
-
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
-
-    const timestamp = new Date().toISOString();
-    const customer = document.getElementById("customer").value.trim();
-    const items = document.getElementById("items").value.trim();
-    const total = document.getElementById("total").value.trim();
-    const payment = document.getElementById("payment").value;
-
-    if (!items || !total || !payment) {
-      alert("Please fill in all required fields.");
-      return;
-    }
-
-    const sale = {
-      Date: timestamp,
-      Customer: customer,
-      Items: items,
-      Total: total,
-      Payment: payment,
-    };
-
-    salesData.push(sale);
-    saveSales();
-    updateTable();
-    form.reset();
+  sales.forEach((sale) => {
+    const row = [
+      sale.item,
+      sale.quantity,
+      sale.price.toFixed(2),
+      sale.paymentMethod,
+      sale.timestamp,
+    ].join(",");
+    csvContent += row + "\n";
   });
 
-  downloadBtn.addEventListener("click", downloadCSV);
-
-  updateTable(); // Initialize table on page load
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "sales_log.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 });
