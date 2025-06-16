@@ -1,2 +1,2 @@
 # Point_of_sale
-Simple pos system
+Subscription calendar for website
